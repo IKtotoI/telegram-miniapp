@@ -1,48 +1,52 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Проверка подписки</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
-  <h2>Проверка подписки на каналы</h2>
-  <p id="status">⏳ Авторизация...</p>
+  <h3>Проверка подписки на канал</h3>
+  <p>Авторизуйтесь через Telegram</p>
+  <button id="checkBtn">Проверить подписку</button>
+  <p id="result"></p>
 
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
 
-    const user = tg.initDataUnsafe?.user;
-    const contestId = new URLSearchParams(window.location.search).get("contest_id");
+    document.getElementById('checkBtn').addEventListener('click', () => {
+      const userId = tg.initDataUnsafe.user.id;
+      const username = tg.initDataUnsafe.user.username || '';
+      const urlParams = new URLSearchParams(window.location.search);
+      const contest_id = urlParams.get('contest_id') || 0;
 
-    if (!user) {
-      document.getElementById("status").innerText = "❌ Не удалось получить данные Telegram.";
-    } else {
-      document.getElementById("status").innerText = "🔄 Проверка подписки...";
-
-      fetch("https://YOUR_SERVER/api/check_subscription", {
+      fetch("https://98c59bfbfaf5.ngrok-free.app/api/check_subscription", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({
-          user_id: user.id,
-          username: user.username || "",
-          contest_id: contestId
+          user_id: userId,
+          username: username,
+          contest_id: Number(contest_id)
         })
       })
-      .then(res => res.json())
+      .then(response => response.json())
       .then(data => {
-        if (data.success) {
-          document.getElementById("status").innerText = "✅ Вы участвуете в конкурсе!";
+        if(data.success) {
+          document.getElementById('result').textContent = "✅ Вы подписаны и можете участвовать!";
+          tg.sendData("subscribed");
         } else {
-          document.getElementById("status").innerText = "❌ " + data.message;
+          document.getElementById('result').textContent = "❌ Вы не подписаны на необходимые каналы.";
+          tg.sendData("not_subscribed");
         }
       })
-      .catch(err => {
-        document.getElementById("status").innerText = "❌ Ошибка запроса.";
-        console.error(err);
+      .catch(() => {
+        document.getElementById('result').textContent = "Ошибка при проверке подписки.";
       });
-    }
+    });
   </script>
 </body>
 </html>
