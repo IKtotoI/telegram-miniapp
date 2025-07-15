@@ -35,7 +35,7 @@
       })
       .then(response => response.json())
       .then(data => {
-        if(data.success) {
+        if(data.success && data.subscribed) {
           document.getElementById('result').textContent = "✅ Вы подписаны и можете участвовать!";
           tg.sendData("subscribed");
         } else {
