@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Проверка подписки</title>
+  <script async src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <h2>Проверка подписки на канал</h2>
+  <div id="result">Авторизуйтесь через Telegram</div>
+  <button id="join-btn" style="display:none;">Принять участие</button>
+
+  <script>
+    let user = null;
+    const params = new URLSearchParams(window.location.search);
+    const contest_id = params.get('contest_id');
+
+    function showMessage(text) {
+      document.getElementById('result').innerText = text;
+    }
+
+    async function checkSubscription(user_id) {
+      const resp = await fetch('/check_subscription', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({user_id: user_id, contest_id: contest_id})
+      });
+      return resp.json();
+    }
+
+    async function joinContest(user_id, contest_id) {
+      const resp = await fetch('/join_contest', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({user_id: user_id, contest_id: contest_id})
+      });
+      return resp.json();
+    }
+
+    Telegram.WebApp.ready();
+
+    function init(userData) {
+      user = userData;
+      showMessage("Привет, " + user.first_name + "! Проверяем подписку...");
+      checkSubscription(user.id).then(data => {
+        if (data.subscribed) {
+          showMessage("✅ Вы подписаны на канал. Можете участвовать.");
+          document.getElementById('join-btn').style.display = 'block';
+        } else {
+          showMessage("❌ Вы НЕ подписаны на канал. Подпишитесь, чтобы участвовать.");
+        }
+      });
+    }
+
+    Telegram.WebApp.onEvent('auth', (userData) => {
+      init(userData);
+    });
+
+    if (Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user) {
+      init(Telegram.WebApp.initDataUnsafe.user);
+    }
+
+    document.getElementById('join-btn').onclick = () => {
+      joinContest(user.id, contest_id).then(data => {
+        alert(data.message);
+      });
+    };
+  </script>
+</body>
+</html>
